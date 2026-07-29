@@ -1,36 +1,50 @@
+version: '3.8'
+
 services:
-  postgres:
-    image: postgres:16
+  # 1. Contenedor de la Base de Datos PostgreSQL
+  db:
+    image: postgres:15-alpine
     container_name: postgresCRUD
-    restart: unless-stopped
+    restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: escuela
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: mi_base_datos
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mi_red
 
+  # 2. Contenedor de pgAdmin (Visualizador Web Corregido)
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4
     container_name: pgadminCRUD
-    restart: unless-stopped
+    restart: always
     environment:
+      # Credenciales de acceso a la web
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_DEFAULT_PASSWORD: admin
+      
+      # Forzar a pgAdmin a escuchar en el puerto correcto dentro del contenedor
+      PGADMIN_LISTEN_PORT: 8080
+      
+      # Configuraciones anti-bloqueo para GitHub Codespaces
+      PGADMIN_CONFIG_PROXY_X_HOST_COUNT: 1
+      PGADMIN_CONFIG_PROXY_X_PREFIX_COUNT: 1
       PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
-      PGADMIN_CONFIG_WTF_CSRF_ENABLED: "False"
-      PGADMIN_CONFIG_SERVER_MODE: "True"
+      PGADMIN_CONFIG_WTF_CSRF_CHECK_DEFAULT: "False"
     ports:
-      - "8080:80"
+      - "8080:8080"
     depends_on:
-      - postgres
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/01_init.sql
-      - ./save_data.sql:/docker-entrypoint-initdb.d/02_save_data.sql
+      - db
+    networks:
+      - mi_red
+
 volumes:
   postgres_data:
-  pgadmin_data:
+
+networks:
+  mi_red:
+    driver: bridge
